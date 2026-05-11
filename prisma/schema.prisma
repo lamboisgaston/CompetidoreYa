@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPER_ADMIN
+  ORGANIZADOR
+  COMPETIDOR
+  ARBITRO
+}
+
+enum AuditAction {
+  LOGIN
+  CREATE_TOURNAMENT
+  UPDATE_TOURNAMENT
+  DELETE_TOURNAMENT
+  REGISTER_COMPETITOR
+  REPORT_MATCH_RESULT
+}
+
+model User {
+  id           String       @id @default(cuid())
+  email        String       @unique
+  passwordHash String
+  role         Role
+  createdAt    DateTime     @default(now())
+  tournaments  Tournament[] @relation("OrganizerTournaments")
+  registrations Registration[]
+  arbitratedMatches Match[] @relation("AssignedReferee")
+  auditLogs    AuditLog[]
+}
+
+model Tournament {
+  id            String         @id @default(cuid())
+  name          String
+  organizerId   String
+  organizer     User           @relation("OrganizerTournaments", fields: [organizerId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  matches       Match[]
+  registrations Registration[]
+}
+
+model Registration {
+  id           String     @id @default(cuid())
+  competitorId String
+  tournamentId String
+  createdAt    DateTime   @default(now())
+  competitor   User       @relation(fields: [competitorId], references: [id])
+  tournament   Tournament @relation(fields: [tournamentId], references: [id])
+
+  @@unique([competitorId, tournamentId])
+}
+
+model Match {
+  id            String     @id @default(cuid())
+  tournamentId  String
+  refereeId     String
+  result        String?
+  playedAt      DateTime?
+  tournament    Tournament @relation(fields: [tournamentId], references: [id])
+  referee       User       @relation("AssignedReferee", fields: [refereeId], references: [id])
+}
+
+model AuditLog {
+  id        String      @id @default(cuid())
+  userId    String
+  action    AuditAction
+  targetId  String?
+  detail    String?
+  createdAt DateTime    @default(now())
+  user      User        @relation(fields: [userId], references: [id])
+}
