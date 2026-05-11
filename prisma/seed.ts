@@ -17,7 +17,29 @@ async function main() {
     select: { id: true, email: true, role: true, createdAt: true }
   });
 
-  console.log("Seed user ready:", user);
+  const salta = await prisma.city.upsert({
+    where: { name: "Salta" },
+    update: {},
+    create: { name: "Salta" }
+  });
+
+  const tenis = await prisma.sport.upsert({
+    where: { name: "Tenis" },
+    update: {},
+    create: { name: "Tenis" }
+  });
+
+  const categories = ["Primera", "Segunda", "Tercera", "Cuarta", "Quinta", "Dobles"];
+
+  for (const name of categories) {
+    await prisma.sportCategory.upsert({
+      where: { sportId_name: { sportId: tenis.id, name } },
+      update: {},
+      create: { sportId: tenis.id, name }
+    });
+  }
+
+  console.log("Seed listo:", { user, city: salta.name, sport: tenis.name, categories });
 }
 
 main()

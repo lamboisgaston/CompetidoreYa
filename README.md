@@ -12,73 +12,38 @@ Base técnica segura para plataforma de torneos deportivos, con arquitectura mod
 
 ## Roles
 - `SUPER_ADMIN`: acceso global.
-- `ORGANIZADOR`: solo gestiona sus torneos.
-- `COMPETIDOR`: solo gestiona sus inscripciones.
+- `ORGANIZADOR`: solo gestiona sus torneos y categorías de sus torneos.
+- `COMPETIDOR`: gestiona sus inscripciones y su perfil deportivo.
 - `ARBITRO`: solo reporta resultados de partidos asignados.
 
-## Seguridad aplicada
-- Variables sensibles en `.env` (`DATABASE_URL`, `JWT_SECRET`, `BCRYPT_SALT_ROUNDS`).
-- Middleware de autenticación y autorización por rol.
-- Validación estricta de payloads en backend.
-- Controles de ownership para evitar acceso/modificación cruzada entre usuarios.
-- Registro de auditoría para login, creación de torneo, inscripción y carga de resultados.
+## Nuevos módulos deportivos base
+- `cities`: catálogo de ciudades (crear/listar).
+- `sports`: catálogo de deportes (crear/listar).
+- `sport-categories`: categorías por deporte (crear/listar).
+- `tournament-categories`: categorías habilitadas dentro de un torneo.
+- `competitor-profile`: perfil deportivo del competidor.
 
-## Configuración
-1. Copiar `.env.example` a `.env` y completar valores seguros.
-2. Instalar dependencias:
-   ```bash
-   npm install
-   ```
-3. Generar cliente Prisma:
-   ```bash
-   npm run prisma:generate
-   ```
-4. Crear/migrar base de datos:
-   ```bash
-   npm run prisma:migrate
-   ```
-5. Ejecutar en desarrollo:
-   ```bash
-   npm run dev
-   ```
+## Reglas de acceso
+- `SUPER_ADMIN` puede crear ciudades, deportes y categorías deportivas.
+- `ORGANIZADOR` puede crear categorías dentro de torneos propios.
+- `COMPETIDOR` puede crear/actualizar su perfil deportivo (`city`, `sport`, `sportCategory`).
 
-## Estructura modular
-- `src/modules/auth`: registro/login seguro.
-- `src/modules/tournaments`: gestión de torneos con scoping por rol.
-- `src/modules/registrations`: inscripciones por competidor autenticado.
-- `src/modules/matches`: carga de resultados por árbitro asignado.
-- `src/modules/audit`: auditoría centralizada.
-- `src/core/middleware`: autenticación, autorización y manejo de errores.
+## Endpoints principales
+- `GET/POST /cities`
+- `GET/POST /sports`
+- `GET/POST /sport-categories`
+- `GET/POST /tournament-categories`
+- `GET/PUT /competitor-profile`
 
+## Seed inicial
+`npm run prisma:seed` ahora asegura:
+- Ciudad: `Salta`
+- Deporte: `Tenis`
+- Categorías de tenis: `Primera`, `Segunda`, `Tercera`, `Cuarta`, `Quinta`, `Dobles`
+- Usuario `SUPER_ADMIN` inicial (configurable por env)
 
-## Flujo recomendado para continuar
-1. **Levantar PostgreSQL real** (local Docker):
-   ```bash
-   docker run --name competidoreya-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=competidoreya -p 5432:5432 -d postgres:16
-   ```
-2. **Configurar variables**: copiar `.env.example` a `.env` y revisar `DATABASE_URL`.
-3. **Migrar esquema Prisma**:
-   ```bash
-   npm run prisma:migrate -- --name init
-   ```
-4. **Crear primer usuario SUPER_ADMIN**:
-   ```bash
-   npm run prisma:seed
-   ```
-   Variables opcionales para el seed:
-   - `SEED_ADMIN_EMAIL`
-   - `SEED_ADMIN_PASSWORD`
-5. **Probar registro/login**:
-   ```bash
-   curl -X POST http://localhost:3000/auth/register \
-     -H "Content-Type: application/json" \
-     -d '{"email":"comp1@mail.com","password":"Password123!","role":"COMPETIDOR"}'
-
-   curl -X POST http://localhost:3000/auth/login \
-     -H "Content-Type: application/json" \
-     -d '{"email":"comp1@mail.com","password":"Password123!"}'
-   ```
-6. **Probar permisos por rol** (usar token JWT):
-   - `COMPETIDOR` no puede crear torneos (`POST /tournaments` → 403).
-   - `ORGANIZADOR` sí puede crear/listar sus torneos.
-   - `ARBITRO` solo puede reportar resultados en partidos asignados.
+## Setup y testing esperado
+1. `npm install`
+2. `npm run build`
+3. `npx prisma migrate dev`
+4. `npm run prisma:seed`
