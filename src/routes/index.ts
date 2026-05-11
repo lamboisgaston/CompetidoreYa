@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { login, register } from "../modules/auth/auth.controller.js";
+import { login, register, registerCompetitor } from "../modules/auth/auth.controller.js";
 import { getCities, postCity } from "../modules/cities/city.controller.js";
 import { getCompetitorProfile, putCompetitorProfile } from "../modules/competitor-profiles/competitor-profile.controller.js";
 import { patchMatchResult } from "../modules/matches/match.controller.js";
@@ -13,6 +13,7 @@ import { requireAuth } from "../core/middleware/authentication.js";
 export const router = Router();
 
 router.post("/auth/register", register);
+router.post("/auth/register/competitor", registerCompetitor);
 router.post("/auth/login", login);
 
 router.use(requireAuth);
