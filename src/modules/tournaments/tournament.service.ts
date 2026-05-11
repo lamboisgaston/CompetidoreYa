@@ -10,7 +10,7 @@ export async function listTournaments(userId: string, role: Role) {
 }
 
 export async function createTournament(userId: string, role: Role, name: string) {
-  if (![Role.SUPER_ADMIN, Role.ORGANIZADOR].includes(role)) throw new HttpError(403, "No autorizado");
+  if (role !== Role.SUPER_ADMIN && role !== Role.ORGANIZADOR) throw new HttpError(403, "No autorizado");
   const tournament = await prisma.tournament.create({ data: { name, organizerId: userId } });
   await registerAudit({ userId, action: AuditAction.CREATE_TOURNAMENT, targetId: tournament.id });
   return tournament;
