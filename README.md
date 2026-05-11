@@ -1,0 +1,2 @@
+# CompetidoreYa
+Plataforma deportiva 
