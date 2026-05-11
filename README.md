@@ -49,3 +49,36 @@ Base técnica segura para plataforma de torneos deportivos, con arquitectura mod
 - `src/modules/matches`: carga de resultados por árbitro asignado.
 - `src/modules/audit`: auditoría centralizada.
 - `src/core/middleware`: autenticación, autorización y manejo de errores.
+
+
+## Flujo recomendado para continuar
+1. **Levantar PostgreSQL real** (local Docker):
+   ```bash
+   docker run --name competidoreya-db -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=competidoreya -p 5432:5432 -d postgres:16
+   ```
+2. **Configurar variables**: copiar `.env.example` a `.env` y revisar `DATABASE_URL`.
+3. **Migrar esquema Prisma**:
+   ```bash
+   npm run prisma:migrate -- --name init
+   ```
+4. **Crear primer usuario SUPER_ADMIN**:
+   ```bash
+   npm run prisma:seed
+   ```
+   Variables opcionales para el seed:
+   - `SEED_ADMIN_EMAIL`
+   - `SEED_ADMIN_PASSWORD`
+5. **Probar registro/login**:
+   ```bash
+   curl -X POST http://localhost:3000/auth/register \
+     -H "Content-Type: application/json" \
+     -d '{"email":"comp1@mail.com","password":"Password123!","role":"COMPETIDOR"}'
+
+   curl -X POST http://localhost:3000/auth/login \
+     -H "Content-Type: application/json" \
+     -d '{"email":"comp1@mail.com","password":"Password123!"}'
+   ```
+6. **Probar permisos por rol** (usar token JWT):
+   - `COMPETIDOR` no puede crear torneos (`POST /tournaments` → 403).
+   - `ORGANIZADOR` sí puede crear/listar sus torneos.
+   - `ARBITRO` solo puede reportar resultados en partidos asignados.
