@@ -7,6 +7,11 @@ export const registerSchema = z.object({
   role: z.nativeEnum(Role)
 });
 
+export const registerCompetitorSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(10)
+});
+
 export const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1)
