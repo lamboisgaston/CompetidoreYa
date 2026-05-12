@@ -16,17 +16,19 @@ router.post("/auth/register", register);
 router.post("/auth/register/competitor", registerCompetitor);
 router.post("/auth/login", login);
 
+// Lectura pública para catálogos base
+router.get("/cities", getCities);
+router.get("/sports", getSports);
+router.get("/sport-categories", getSportCategories);
+
 router.use(requireAuth);
 router.get("/tournaments", getTournaments);
 router.post("/tournaments", postTournament);
 router.post("/registrations", postRegistration);
 router.patch("/matches/:matchId/result", patchMatchResult);
 
-router.get("/cities", getCities);
 router.post("/cities", postCity);
-router.get("/sports", getSports);
 router.post("/sports", postSport);
-router.get("/sport-categories", getSportCategories);
 router.post("/sport-categories", postSportCategory);
 router.get("/tournament-categories", getTournamentCategories);
 router.post("/tournament-categories", postTournamentCategory);

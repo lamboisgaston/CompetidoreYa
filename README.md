@@ -1,6 +1,6 @@
 # CompetidoreYa
 
-Base técnica segura para plataforma de torneos deportivos, con arquitectura modular enfocada en backend.
+Base técnica segura para plataforma de torneos deportivos, con arquitectura modular enfocada en backend + frontend mínimo funcional.
 
 ## Stack
 - Node.js + TypeScript + Express
@@ -9,6 +9,7 @@ Base técnica segura para plataforma de torneos deportivos, con arquitectura mod
 - Hash de contraseñas con bcrypt
 - Validación de entrada con Zod
 - Auditoría básica de acciones críticas
+- Frontend React + Vite + Tailwind
 
 ## Roles
 - `SUPER_ADMIN`: acceso global.
@@ -16,34 +17,47 @@ Base técnica segura para plataforma de torneos deportivos, con arquitectura mod
 - `COMPETIDOR`: gestiona sus inscripciones y su perfil deportivo.
 - `ARBITRO`: solo reporta resultados de partidos asignados.
 
-## Nuevos módulos deportivos base
-- `cities`: catálogo de ciudades (crear/listar).
-- `sports`: catálogo de deportes (crear/listar).
-- `sport-categories`: categorías por deporte (crear/listar).
-- `tournament-categories`: categorías habilitadas dentro de un torneo.
-- `competitor-profile`: perfil deportivo del competidor.
+## Frontend (estado actual)
+Pantalla inicial con selección de tipo de usuario:
+1. Competidor
+2. Organizador / Administrador de torneo
+3. Árbitro
 
-## Reglas de acceso
-- `SUPER_ADMIN` puede crear ciudades, deportes y categorías deportivas.
-- `ORGANIZADOR` puede crear categorías dentro de torneos propios.
-- `COMPETIDOR` puede crear/actualizar su perfil deportivo (`city`, `sport`, `sportCategory`).
+### Registro de competidor
+Solicita:
+- email
+- password
+- ciudad
+- deporte
+- categoría
 
-## Endpoints principales
-- `GET/POST /cities`
-- `GET/POST /sports`
-- `GET/POST /sport-categories`
-- `GET/POST /tournament-categories`
-- `GET/PUT /competitor-profile`
+Flujo:
+- registra competidor (`POST /api/auth/register/competitor`)
+- hace login automático (`POST /api/auth/login`)
+- intenta completar perfil deportivo (`PUT /api/competitor-profile`)
+- muestra panel de competidor con perfil + torneos + botón **Inscribirme**
 
-## Seed inicial
-`npm run prisma:seed` ahora asegura:
-- Ciudad: `Salta`
-- Deporte: `Tenis`
-- Categorías de tenis: `Primera`, `Segunda`, `Tercera`, `Cuarta`, `Quinta`, `Dobles`
-- Usuario `SUPER_ADMIN` inicial (configurable por env)
+### Organizadores y árbitros
+- Vista preparada para organizador con mensaje: **“Registro de organizadores próximamente”**.
+- Vista preparada para árbitro con mensaje: **“Registro de árbitros próximamente”**.
+- Panel organizador preparado con listado de torneos y botón futuro **Crear torneo**.
+- Panel árbitro con mensaje: **“Panel de árbitro en preparación”**.
+
+## Seguridad y catálogos públicos
+Lectura pública habilitada para:
+- `GET /api/cities`
+- `GET /api/sports`
+- `GET /api/sport-categories`
+
+Escritura protegida por autenticación/rol:
+- `POST /api/cities`
+- `POST /api/sports`
+- `POST /api/sport-categories`
+- resto de endpoints de operación
 
 ## Setup y testing esperado
 1. `npm install`
 2. `npm run build`
 3. `npx prisma migrate dev`
 4. `npm run prisma:seed`
+5. `cd frontend && npm install && npm run build`
