@@ -9,7 +9,10 @@ export const registerSchema = z.object({
 
 export const registerCompetitorSchema = z.object({
   email: z.string().email(),
-  password: z.string().min(10)
+  password: z.string().min(10),
+  firstName: z.string().min(1),
+  lastName: z.string().min(1),
+  cityId: z.string().cuid()
 });
 
 export const loginSchema = z.object({
