@@ -22,9 +22,11 @@ export function App() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [countryId, setCountryId] = useState("");
   const [cityId, setCityId] = useState("");
   const [sportId, setSportId] = useState("");
   const [sportCategoryId, setSportCategoryId] = useState("");
+  const [countries, setCountries] = useState<Option[]>([]);
   const [cities, setCities] = useState<Option[]>([]);
   const [sports, setSports] = useState<Option[]>([]);
   const [categories, setCategories] = useState<Option[]>([]);
@@ -40,11 +42,12 @@ export function App() {
   const selectedTournamentCategories = useMemo(() => tournamentCategories.filter((tc) => tc.tournamentId === selectedTournament && tc.sportId === sportId).map((tc) => tc.sportCategory), [selectedTournament, sportId, tournamentCategories]);
 
   async function fetchJson(path: string, options?: RequestInit) { const res = await fetch(`${API_BASE}${path}`, options); const data = await res.json().catch(() => ({})); return { res, data }; }
-  async function loadCatalogs() { const [a,b,c] = await Promise.all([fetchJson('/cities'), fetchJson('/sports'), fetchJson('/sport-categories')]); if(a.res.ok) setCities(a.data); if(b.res.ok) setSports(b.data); if(c.res.ok) setCategories(c.data); }
+  async function loadCatalogs() { const [countriesRes,b,c] = await Promise.all([fetchJson('/countries'), fetchJson('/sports'), fetchJson('/sport-categories')]); if(countriesRes.res.ok) setCountries(countriesRes.data); if(b.res.ok) setSports(b.data); if(c.res.ok) setCategories(c.data); }
+  async function loadCities(selectedCountryId: string) { const { res, data } = await fetchJson(`/cities${selectedCountryId ? `?countryId=${selectedCountryId}` : ''}`); if (res.ok) setCities(data); }
 
   async function handleCompetitorRegister(e: React.FormEvent) {
     e.preventDefault(); setMessage("");
-    const r = await fetchJson('/auth/register/competitor', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ firstName, lastName, cityId, email, password }) });
+    const r = await fetchJson('/auth/register/competitor', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ firstName, lastName, countryId, cityId, email, password }) });
     if (!r.res.ok) return setMessage(r.data.message || 'No se pudo registrar competidor');
     setMessage('Cuenta creada. Ahora iniciá sesión.'); setView('login');
   }
@@ -86,7 +89,8 @@ export function App() {
       <input className="w-full rounded border p-2" placeholder="Apellido" value={lastName} onChange={(e)=>setLastName(e.target.value)} required />
       <input className="w-full rounded border p-2" type="email" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} required />
       <input className="w-full rounded border p-2" type="password" placeholder="Password (mínimo 10)" value={password} onChange={(e)=>setPassword(e.target.value)} required />
-      <select className="w-full rounded border p-2" value={cityId} onChange={(e)=>setCityId(e.target.value)} required><option value="">Seleccionar ciudad</option>{cities.map((city)=><option key={city.id} value={city.id}>{city.name}</option>)}</select>
+      <select className="w-full rounded border p-2" value={countryId} onChange={(e)=>{ const value = e.target.value; setCountryId(value); setCityId(''); void loadCities(value); }} required><option value="">Seleccionar país</option>{countries.map((country)=><option key={country.id} value={country.id}>{country.name}</option>)}</select>
+      <select className="w-full rounded border p-2" value={cityId} onChange={(e)=>setCityId(e.target.value)} required disabled={!countryId}><option value="">Seleccionar ciudad</option>{cities.map((city)=><option key={city.id} value={city.id}>{city.name}</option>)}</select>
       <button className="w-full rounded bg-blue-600 px-4 py-2 text-white" type="submit">Crear cuenta</button></form>}
 
     {!token && view==='login' && <form className="mt-6 max-w-md space-y-3 rounded bg-white p-4 shadow" onSubmit={handleLogin}><h2 className="text-xl font-semibold">Iniciar sesión</h2><input className="w-full rounded border p-2" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required /><input className="w-full rounded border p-2" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required /><button className="w-full rounded bg-blue-600 px-4 py-2 text-white" type="submit">Ingresar</button></form>}

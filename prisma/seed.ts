@@ -17,11 +17,32 @@ async function main() {
     select: { id: true, email: true, role: true, createdAt: true }
   });
 
-  const salta = await prisma.city.upsert({
-    where: { name: "Salta" },
-    update: {},
-    create: { name: "Salta" }
-  });
+  const latinAmericanCountries = [
+    "Argentina", "Bolivia", "Brasil", "Chile", "Colombia", "Costa Rica", "Cuba", "Ecuador", "El Salvador", "Guatemala",
+    "Honduras", "México", "Nicaragua", "Panamá", "Paraguay", "Perú", "República Dominicana", "Uruguay", "Venezuela"
+  ];
+
+  const countries = new Map<string, string>();
+  for (const countryName of latinAmericanCountries) {
+    const country = await prisma.country.upsert({
+      where: { name: countryName },
+      update: {},
+      create: { name: countryName }
+    });
+    countries.set(countryName, country.id);
+  }
+
+  const argentinaId = countries.get("Argentina");
+  if (!argentinaId) throw new Error("No se pudo crear Argentina en el seed");
+
+  const argentinaMainCities = ["Buenos Aires", "Córdoba", "Rosario", "Mendoza", "La Plata", "San Miguel de Tucumán", "Mar del Plata", "Salta"];
+  for (const cityName of argentinaMainCities) {
+    await prisma.city.upsert({
+      where: { countryId_name: { countryId: argentinaId, name: cityName } },
+      update: {},
+      create: { name: cityName, countryId: argentinaId }
+    });
+  }
 
   const tenis = await prisma.sport.upsert({
     where: { name: "Tenis" },
@@ -39,7 +60,7 @@ async function main() {
     });
   }
 
-  console.log("Seed listo:", { user, city: salta.name, sport: tenis.name, categories });
+  console.log("Seed listo:", { user, countries: latinAmericanCountries.length, argentinaMainCities, sport: tenis.name, categories });
 }
 
 main()

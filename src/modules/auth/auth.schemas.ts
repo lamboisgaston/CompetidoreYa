@@ -12,6 +12,7 @@ export const registerCompetitorSchema = z.object({
   password: z.string().min(10),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
+  countryId: z.string().cuid(),
   cityId: z.string().cuid()
 });
 
