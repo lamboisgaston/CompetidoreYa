@@ -31,6 +31,7 @@ model User {
   firstName          String?
   lastName           String?
   cityId             String?
+  countryId          String?
   createdAt          DateTime           @default(now())
   tournaments        Tournament[]       @relation("OrganizerTournaments")
   registrations      Registration[]
@@ -38,6 +39,7 @@ model User {
   auditLogs          AuditLog[]
   competitorProfile  CompetitorProfile?
   city               City?              @relation(fields: [cityId], references: [id])
+  country            Country?           @relation(fields: [countryId], references: [id])
 }
 
 model Tournament {
@@ -85,10 +87,22 @@ model AuditLog {
 
 model City {
   id         String              @id @default(cuid())
-  name       String              @unique
+  name       String
+  countryId  String
   createdAt  DateTime            @default(now())
+  country    Country             @relation(fields: [countryId], references: [id])
   profiles   CompetitorProfile[]
   users      User[]
+
+  @@unique([countryId, name])
+}
+
+model Country {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  createdAt DateTime  @default(now())
+  cities    City[]
+  users     User[]
 }
 
 model Sport {

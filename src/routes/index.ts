@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { login, register, registerCompetitor } from "../modules/auth/auth.controller.js";
 import { getCities, postCity } from "../modules/cities/city.controller.js";
+import { getCountries } from "../modules/countries/country.controller.js";
 import { getCompetitorProfile, putCompetitorProfile } from "../modules/competitor-profiles/competitor-profile.controller.js";
 import { patchMatchResult } from "../modules/matches/match.controller.js";
 import { postRegistration } from "../modules/registrations/registration.controller.js";
@@ -18,6 +19,7 @@ router.post("/auth/login", login);
 
 // Lectura pública para catálogos base
 router.get("/cities", getCities);
+router.get("/countries", getCountries);
 router.get("/sports", getSports);
 router.get("/sport-categories", getSportCategories);
 
