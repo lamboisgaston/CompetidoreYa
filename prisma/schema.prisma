@@ -28,12 +28,16 @@ model User {
   email              String             @unique
   passwordHash       String
   role               Role
+  firstName          String?
+  lastName           String?
+  cityId             String?
   createdAt          DateTime           @default(now())
   tournaments        Tournament[]       @relation("OrganizerTournaments")
   registrations      Registration[]
   arbitratedMatches  Match[]            @relation("AssignedReferee")
   auditLogs          AuditLog[]
   competitorProfile  CompetitorProfile?
+  city               City?              @relation(fields: [cityId], references: [id])
 }
 
 model Tournament {
@@ -84,6 +88,7 @@ model City {
   name       String              @unique
   createdAt  DateTime            @default(now())
   profiles   CompetitorProfile[]
+  users      User[]
 }
 
 model Sport {
@@ -124,12 +129,12 @@ model CompetitorProfile {
   id              String        @id @default(cuid())
   userId          String        @unique
   cityId          String
-  sportId         String
-  sportCategoryId String
+  sportId         String?
+  sportCategoryId String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   user            User          @relation(fields: [userId], references: [id])
   city            City          @relation(fields: [cityId], references: [id])
-  sport           Sport         @relation(fields: [sportId], references: [id])
-  sportCategory   SportCategory @relation(fields: [sportCategoryId], references: [id])
+  sport           Sport?        @relation(fields: [sportId], references: [id])
+  sportCategory   SportCategory? @relation(fields: [sportCategoryId], references: [id])
 }

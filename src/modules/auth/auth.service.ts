@@ -6,13 +6,19 @@ import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../core/errors/http-error.js";
 import { registerAudit } from "../audit/audit.service.js";
 
-export async function registerUser(input: { email: string; password: string; role: any }) {
+export async function registerUser(input: { email: string; password: string; role: any; firstName?: string; lastName?: string; cityId?: string }) {
   const exists = await prisma.user.findUnique({ where: { email: input.email } });
   if (exists) throw new HttpError(409, "El email ya está en uso");
 
   const passwordHash = await bcrypt.hash(input.password, env.BCRYPT_SALT_ROUNDS);
+
+  if (input.cityId) {
+    const city = await prisma.city.findUnique({ where: { id: input.cityId } });
+    if (!city) throw new HttpError(404, "Ciudad no encontrada");
+  }
+
   const user = await prisma.user.create({
-    data: { email: input.email, passwordHash, role: input.role },
+    data: { email: input.email, passwordHash, role: input.role, firstName: input.firstName, lastName: input.lastName, cityId: input.cityId },
     select: { id: true, email: true, role: true, createdAt: true }
   });
 
