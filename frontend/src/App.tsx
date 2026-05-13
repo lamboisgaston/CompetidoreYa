@@ -9,7 +9,7 @@ type Tournament = { id: string; name: string };
 type TournamentCategory = { tournamentId: string; sportId: string; sportCategory: Option };
 type Profile = { cityId: string; sportId?: string; sportCategoryId?: string; city?: Option; sport?: Option; sportCategory?: Option };
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:3000/api";
+const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
 const TOKEN_KEY = "competidoreya_token";
 
 function decodeJwtPayload(token: string): { email?: string; role?: Role } { try { return JSON.parse(atob(token.split(".")[1] || "")); } catch { return {}; } }
