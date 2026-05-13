@@ -12,6 +12,6 @@ export async function getTournaments(req: Request, res: Response): Promise<void>
 export async function postTournament(req: Request, res: Response): Promise<void> {
   if (!req.user) throw new HttpError(401, "No autenticado");
   const input = createTournamentSchema.parse(req.body);
-  const row = await createTournament(req.user.sub, req.user.role, input.name);
+  const row = await createTournament(req.user.sub, req.user.role, input);
   res.status(201).json(row);
 }
