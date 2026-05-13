@@ -45,8 +45,13 @@ model User {
 model Tournament {
   id                   String               @id @default(cuid())
   name                 String
+  cityId               String?
+  slots                Int?
+  startDate            DateTime?
+  endDate              DateTime?
   organizerId          String
   organizer            User                 @relation("OrganizerTournaments", fields: [organizerId], references: [id])
+  city                 City?                @relation(fields: [cityId], references: [id])
   createdAt            DateTime             @default(now())
   updatedAt            DateTime             @updatedAt
   matches              Match[]
@@ -93,6 +98,7 @@ model City {
   country    Country             @relation(fields: [countryId], references: [id])
   profiles   CompetitorProfile[]
   users      User[]
+  tournaments Tournament[]
 
   @@unique([countryId, name])
 }

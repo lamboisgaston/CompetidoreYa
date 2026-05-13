@@ -3,104 +3,33 @@ import { useEffect, useMemo, useState } from "react";
 type Role = "SUPER_ADMIN" | "COMPETIDOR" | "ORGANIZADOR" | "ARBITRO" | string;
 type UserType = "COMPETIDOR" | "ORGANIZADOR" | "ARBITRO";
 type View = "home" | "roleRegister" | "login" | "panel";
-
 type Option = { id: string; name: string; sportId?: string };
-type Tournament = { id: string; name: string };
-type TournamentCategory = { tournamentId: string; sportId: string; sportCategory: Option };
-type Profile = { cityId: string; sportId?: string; sportCategoryId?: string; city?: Option; sport?: Option; sportCategory?: Option };
-
-const API_BASE = import.meta.env.VITE_API_URL ?? "/api";
-const TOKEN_KEY = "competidoreya_token";
-
-function decodeJwtPayload(token: string): { email?: string; role?: Role } { try { return JSON.parse(atob(token.split(".")[1] || "")); } catch { return {}; } }
+const API_BASE = import.meta.env.VITE_API_URL ?? "/api"; const TOKEN_KEY = "competidoreya_token";
+const decode = (t: string): { email?: string; role?: Role } => { try { return JSON.parse(atob(t.split(".")[1] || "")); } catch { return {}; } };
 
 export function App() {
-  const [view, setView] = useState<View>("home");
-  const [selectedRole, setSelectedRole] = useState<UserType | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem(TOKEN_KEY));
-  const [firstName, setFirstName] = useState("");
-  const [lastName, setLastName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [countryId, setCountryId] = useState("");
-  const [cityId, setCityId] = useState("");
-  const [sportId, setSportId] = useState("");
-  const [sportCategoryId, setSportCategoryId] = useState("");
-  const [countries, setCountries] = useState<Option[]>([]);
-  const [cities, setCities] = useState<Option[]>([]);
-  const [sports, setSports] = useState<Option[]>([]);
-  const [categories, setCategories] = useState<Option[]>([]);
-  const [message, setMessage] = useState("");
-  const [tournaments, setTournaments] = useState<Tournament[]>([]);
-  const [tournamentCategories, setTournamentCategories] = useState<TournamentCategory[]>([]);
-  const [selectedTournament, setSelectedTournament] = useState("");
-  const [profile, setProfile] = useState<Profile | null>(null);
+const [view,setView]=useState<View>("home"); const [selectedRole,setSelectedRole]=useState<UserType| null>(null); const [token,setToken]=useState<string|null>(localStorage.getItem(TOKEN_KEY));
+const [firstName,setFirstName]=useState(""); const [lastName,setLastName]=useState(""); const [email,setEmail]=useState(""); const [password,setPassword]=useState("");
+const [countryId,setCountryId]=useState(""); const [cityId,setCityId]=useState(""); const [message,setMessage]=useState("");
+const [countries,setCountries]=useState<Option[]>([]); const [cities,setCities]=useState<Option[]>([]); const [sports,setSports]=useState<Option[]>([]); const [categories,setCategories]=useState<Option[]>([]); const [tournaments,setTournaments]=useState<any[]>([]); const [matches,setMatches]=useState<any[]>([]);
+const [tournamentName,setTournamentName]=useState(""); const [sportId,setSportId]=useState(""); const [categoryIds,setCategoryIds]=useState<string[]>([]); const [slots,setSlots]=useState("16"); const [startDate,setStartDate]=useState(""); const [endDate,setEndDate]=useState("");
+const user=useMemo(()=>token?decode(token):{},[token]); const filteredCategories=useMemo(()=>categories.filter(c=>c.sportId===sportId),[categories,sportId]);
+const fetchJson=async(path:string,options?:RequestInit)=>{const res=await fetch(`${API_BASE}${path}`,options);const data=await res.json().catch(()=>({}));return{res,data}};
+const loadCities=async(c:string)=>{const {res,data}=await fetchJson(`/cities${c?`?countryId=${c}`:""}`); if(res.ok)setCities(data)};
 
-  const user = useMemo(() => (token ? decodeJwtPayload(token) : {}), [token]);
-  const filteredCategories = useMemo(() => categories.filter((c) => c.sportId === sportId), [categories, sportId]);
-  const visibleTournaments = useMemo(() => !sportId ? [] : tournaments.filter((t) => tournamentCategories.some((tc) => tc.tournamentId === t.id && tc.sportId === sportId)), [sportId, tournaments, tournamentCategories]);
-  const selectedTournamentCategories = useMemo(() => tournamentCategories.filter((tc) => tc.tournamentId === selectedTournament && tc.sportId === sportId).map((tc) => tc.sportCategory), [selectedTournament, sportId, tournamentCategories]);
+useEffect(()=>{void (async()=>{const [a,b,c]=await Promise.all([fetchJson('/countries'),fetchJson('/sports'),fetchJson('/sport-categories')]); if(a.res.ok)setCountries(a.data); if(b.res.ok)setSports(b.data); if(c.res.ok)setCategories(c.data);})();},[]);
+useEffect(()=>{if(!token||view!=="panel")return; void (async()=>{const h={Authorization:`Bearer ${token}`}; const [t,m]=await Promise.all([fetchJson('/tournaments',{headers:h}), fetchJson('/matches/assigned',{headers:h})]); if(t.res.ok)setTournaments(t.data); if(m.res.ok)setMatches(m.data);})();},[token,view]);
 
-  async function fetchJson(path: string, options?: RequestInit) { const res = await fetch(`${API_BASE}${path}`, options); const data = await res.json().catch(() => ({})); return { res, data }; }
-  async function loadCatalogs() { const [countriesRes,b,c] = await Promise.all([fetchJson('/countries'), fetchJson('/sports'), fetchJson('/sport-categories')]); if(countriesRes.res.ok) setCountries(countriesRes.data); if(b.res.ok) setSports(b.data); if(c.res.ok) setCategories(c.data); }
-  async function loadCities(selectedCountryId: string) { const { res, data } = await fetchJson(`/cities${selectedCountryId ? `?countryId=${selectedCountryId}` : ''}`); if (res.ok) setCities(data); }
+const register = async (role: UserType) => { const endpoint = role==="COMPETIDOR"?"/auth/register/competitor":role==="ORGANIZADOR"?"/auth/register/organizer":"/auth/register/referee"; const r=await fetchJson(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({firstName,lastName,countryId,cityId,email,password})}); setMessage(r.res.ok?"Cuenta creada. Ahora iniciá sesión.":r.data.message||"Error al registrar"); if(r.res.ok) setView('login'); };
 
-  async function handleCompetitorRegister(e: React.FormEvent) {
-    e.preventDefault(); setMessage("");
-    const r = await fetchJson('/auth/register/competitor', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ firstName, lastName, countryId, cityId, email, password }) });
-    if (!r.res.ok) return setMessage(r.data.message || 'No se pudo registrar competidor');
-    setMessage('Cuenta creada. Ahora iniciá sesión.'); setView('login');
-  }
-
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault(); setMessage("");
-    const { res, data } = await fetchJson('/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ email, password }) });
-    if (!res.ok) return setMessage(data.message || 'Credenciales inválidas');
-    localStorage.setItem(TOKEN_KEY, data.token); setToken(data.token); setView('panel');
-  }
-
-  async function loadPanelData() {
-    if (!token) return;
-    const headers = { Authorization: `Bearer ${token}` };
-    const [tRes, tcRes, pRes] = await Promise.all([fetchJson('/tournaments', { headers }), fetchJson('/tournament-categories', { headers }), fetchJson('/competitor-profile', { headers })]);
-    if (tRes.res.ok) setTournaments(tRes.data);
-    if (tcRes.res.ok) setTournamentCategories(tcRes.data);
-    if (pRes.res.ok && pRes.data) { setProfile(pRes.data); setCityId(pRes.data.cityId); if (pRes.data.sportId) setSportId(pRes.data.sportId); }
-  }
-
-  async function registerToTournament() {
-    if (!token || !selectedTournament || !sportId || !sportCategoryId || !cityId) return;
-    const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
-    const pRes = await fetchJson('/competitor-profile', { method:'PUT', headers, body: JSON.stringify({ cityId, sportId, sportCategoryId }) });
-    if (!pRes.res.ok) return setMessage(pRes.data.message || 'No se pudo actualizar el perfil');
-    const {res,data} = await fetchJson('/registrations', { method:'POST', headers, body: JSON.stringify({ tournamentId: selectedTournament }) });
-    setMessage(res.ok ? 'Inscripción realizada.' : data.message || 'No se pudo completar la inscripción');
-  }
-
-  function logout(){ localStorage.removeItem(TOKEN_KEY); setToken(null); setView('home'); }
-  useEffect(() => { void loadCatalogs(); }, []);
-  useEffect(() => { if (token && view === 'panel') void loadPanelData(); }, [token, view]);
-
-  return <main className="min-h-screen bg-slate-50 text-slate-900"><div className="mx-auto max-w-5xl p-6"><h1 className="text-3xl font-bold">CompetidoresYa</h1>
-    {!token && view==='home' && <section className="mt-8 grid gap-4 md:grid-cols-3">{[{ role:'COMPETIDOR', title:'Competidor' },{ role:'ORGANIZADOR', title:'Organizador / Administrador' },{ role:'ARBITRO', title:'Árbitro' }].map((item)=><button key={item.role} className="rounded-lg border bg-white p-4 text-left shadow-sm" onClick={()=>{setSelectedRole(item.role as UserType); setView('roleRegister');}}><h2 className="text-lg font-semibold">{item.title}</h2></button>)}<button className="rounded border px-4 py-2 md:col-span-3" onClick={()=>setView('login')}>Iniciar sesión</button></section>}
-
-    {!token && view==='roleRegister' && selectedRole==='COMPETIDOR' && <form className="mt-6 max-w-lg space-y-3 rounded bg-white p-4 shadow" onSubmit={handleCompetitorRegister}><h2 className="text-xl font-semibold">Registro de competidor</h2>
-      <input className="w-full rounded border p-2" placeholder="Nombre" value={firstName} onChange={(e)=>setFirstName(e.target.value)} required />
-      <input className="w-full rounded border p-2" placeholder="Apellido" value={lastName} onChange={(e)=>setLastName(e.target.value)} required />
-      <input className="w-full rounded border p-2" type="email" placeholder="Email" value={email} onChange={(e)=>setEmail(e.target.value)} required />
-      <input className="w-full rounded border p-2" type="password" placeholder="Password (mínimo 10)" value={password} onChange={(e)=>setPassword(e.target.value)} required />
-      <select className="w-full rounded border p-2" value={countryId} onChange={(e)=>{ const value = e.target.value; setCountryId(value); setCityId(''); void loadCities(value); }} required><option value="">Seleccionar país</option>{countries.map((country)=><option key={country.id} value={country.id}>{country.name}</option>)}</select>
-      <select className="w-full rounded border p-2" value={cityId} onChange={(e)=>setCityId(e.target.value)} required disabled={!countryId}><option value="">Seleccionar ciudad</option>{cities.map((city)=><option key={city.id} value={city.id}>{city.name}</option>)}</select>
-      <button className="w-full rounded bg-blue-600 px-4 py-2 text-white" type="submit">Crear cuenta</button></form>}
-
-    {!token && view==='login' && <form className="mt-6 max-w-md space-y-3 rounded bg-white p-4 shadow" onSubmit={handleLogin}><h2 className="text-xl font-semibold">Iniciar sesión</h2><input className="w-full rounded border p-2" type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required /><input className="w-full rounded border p-2" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required /><button className="w-full rounded bg-blue-600 px-4 py-2 text-white" type="submit">Ingresar</button></form>}
-
-    {token && view==='panel' && <section className="mt-6 space-y-4 rounded bg-white p-4 shadow"><div className="flex items-center justify-between"><h2 className="text-xl font-semibold">Panel {user.role}</h2><button className="rounded border px-3 py-2" onClick={logout}>Cerrar sesión</button></div>
-      {user.role==='COMPETIDOR' && <><div className="rounded border p-3"><h3 className="font-medium">Datos del deportista</h3><p className="text-sm">Email: {user.email}</p><p className="text-sm">Ciudad: {profile?.city?.name ?? 'No configurada'}</p></div>
-      <div className="rounded border p-3"><h3 className="font-medium">¿En qué deporte querés competir?</h3><select className="mt-2 w-full rounded border p-2" value={sportId} onChange={(e)=>{setSportId(e.target.value); setSelectedTournament(''); setSportCategoryId('');}}><option value="">Seleccionar deporte</option>{sports.map((sport)=><option key={sport.id} value={sport.id}>{sport.name}</option>)}</select></div>
-      <div className="rounded border p-3"><h3 className="font-medium">Torneos disponibles</h3><ul className="mt-2 space-y-2">{visibleTournaments.map((t)=><li key={t.id} className="rounded border p-3"><div className="flex items-center justify-between"><span>{t.name}</span><button className="rounded bg-emerald-600 px-3 py-1 text-white" onClick={()=>setSelectedTournament(t.id)}>Inscribirme</button></div>{selectedTournament===t.id && <div className="mt-2"><select className="w-full rounded border p-2" value={sportCategoryId} onChange={(e)=>setSportCategoryId(e.target.value)}><option value="">Seleccionar categoría</option>{selectedTournamentCategories.map((c)=><option key={c.id} value={c.id}>{c.name}</option>)}</select><button className="mt-2 rounded bg-blue-600 px-3 py-1 text-white" onClick={()=>void registerToTournament()}>Confirmar inscripción</button></div>}</li>)}</ul></div></>}
-    </section>}
-
-    {!!message && <p className="mt-4 text-sm text-slate-700">{message}</p>}
-  </div></main>;
+return <main className="min-h-screen bg-slate-50 text-slate-900"><div className="mx-auto max-w-5xl p-6"><h1 className="text-3xl font-bold">CompetidoresYa</h1>
+{!token&&view==='home'&&<section className="mt-8 grid gap-4 md:grid-cols-3">{(['COMPETIDOR','ORGANIZADOR','ARBITRO'] as UserType[]).map(r=><button key={r} className="rounded-lg border bg-white p-4" onClick={()=>{setSelectedRole(r);setView('roleRegister')}}>{r}</button>)}<button className="rounded border px-4 py-2 md:col-span-3" onClick={()=>setView('login')}>Iniciar sesión</button></section>}
+{!token&&view==='roleRegister'&&selectedRole&&<form className="mt-6 max-w-lg space-y-3 rounded bg-white p-4 shadow" onSubmit={(e)=>{e.preventDefault(); void register(selectedRole);}}><h2 className="text-xl font-semibold">Registro {selectedRole}</h2><input className="w-full rounded border p-2" placeholder="Nombre" value={firstName} onChange={e=>setFirstName(e.target.value)} required/><input className="w-full rounded border p-2" placeholder="Apellido" value={lastName} onChange={e=>setLastName(e.target.value)} required/><input className="w-full rounded border p-2" type="email" value={email} onChange={e=>setEmail(e.target.value)} required/><input className="w-full rounded border p-2" type="password" value={password} onChange={e=>setPassword(e.target.value)} required/><select className="w-full rounded border p-2" value={countryId} onChange={e=>{setCountryId(e.target.value);setCityId(''); void loadCities(e.target.value)}} required><option value="">País</option>{countries.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select><select className="w-full rounded border p-2" value={cityId} onChange={e=>setCityId(e.target.value)} required><option value="">Ciudad</option>{cities.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select><button className="w-full rounded bg-blue-600 px-4 py-2 text-white" type="submit">Crear cuenta</button></form>}
+{!token&&view==='login'&&<form className="mt-6 max-w-md space-y-3 rounded bg-white p-4 shadow" onSubmit={async e=>{e.preventDefault(); const {res,data}=await fetchJson('/auth/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password})}); if(!res.ok)return setMessage(data.message||'Credenciales inválidas'); localStorage.setItem(TOKEN_KEY,data.token); setToken(data.token); setView('panel');}}><h2 className="text-xl">Login</h2><input className="w-full rounded border p-2" type="email" value={email} onChange={e=>setEmail(e.target.value)} required/><input className="w-full rounded border p-2" type="password" value={password} onChange={e=>setPassword(e.target.value)} required/><button className="w-full rounded bg-blue-600 px-4 py-2 text-white">Ingresar</button></form>}
+{token&&view==='panel'&&<section className="mt-6 space-y-4 rounded bg-white p-4 shadow"><h2 className="text-xl font-semibold">Panel {user.role}</h2>
+{user.role==='ORGANIZADOR'&&<div className="space-y-2"><h3 className="font-medium">Crear torneo</h3><input className="w-full rounded border p-2" placeholder="Nombre torneo" value={tournamentName} onChange={e=>setTournamentName(e.target.value)}/><select className="w-full rounded border p-2" value={sportId} onChange={e=>setSportId(e.target.value)}><option value="">Deporte</option>{sports.map(s=><option key={s.id} value={s.id}>{s.name}</option>)}</select><select className="w-full rounded border p-2" value={cityId} onChange={e=>setCityId(e.target.value)}><option value="">Ciudad</option>{cities.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select><div className="grid grid-cols-2 gap-2">{filteredCategories.map(c=><label key={c.id}><input type="checkbox" checked={categoryIds.includes(c.id)} onChange={e=>setCategoryIds(v=>e.target.checked?[...v,c.id]:v.filter(x=>x!==c.id))}/> {c.name}</label>)}</div><input className="w-full rounded border p-2" type="number" value={slots} onChange={e=>setSlots(e.target.value)}/><input className="w-full rounded border p-2" type="date" value={startDate} onChange={e=>setStartDate(e.target.value)}/><input className="w-full rounded border p-2" type="date" value={endDate} onChange={e=>setEndDate(e.target.value)}/><button className="rounded bg-emerald-600 px-3 py-2 text-white" onClick={async()=>{const h={'Content-Type':'application/json',Authorization:`Bearer ${token}`}; const {res,data}=await fetchJson('/tournaments',{method:'POST',headers:h,body:JSON.stringify({name:tournamentName,sportId,cityId,slots:Number(slots),startDate,endDate,categoryIds})}); setMessage(res.ok?'Torneo creado':data.message||'Error creando torneo');}}>Guardar torneo</button><h3 className="font-medium">Inscriptos</h3>{tournaments.map(t=><div key={t.id} className="rounded border p-2">{t.name} - {(t.registrations||[]).length} inscriptos</div>)}</div>}
+{user.role==='ARBITRO'&&<div><h3 className="font-medium">Partidos asignados</h3><p className="text-sm">Estado en preparación.</p>{matches.map(m=><div key={m.id} className="rounded border p-2">{m.tournament?.name} - {m.result ?? 'Sin resultado'}</div>)}</div>}
+{user.role==='COMPETIDOR'&&<div><h3 className="font-medium">Torneos disponibles</h3>{tournaments.map(t=><div key={t.id} className="rounded border p-2">{t.name}</div>)}</div>}
+<button className="rounded border px-3 py-2" onClick={()=>{localStorage.removeItem(TOKEN_KEY);setToken(null);setView('home')}}>Cerrar sesión</button></section>}
+{!!message&&<p className="mt-4 text-sm">{message}</p>}</div></main>;
 }

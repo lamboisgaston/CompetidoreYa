@@ -1,0 +1,8 @@
+ALTER TABLE "Tournament"
+  ADD COLUMN "cityId" TEXT,
+  ADD COLUMN "slots" INTEGER,
+  ADD COLUMN "startDate" TIMESTAMP(3),
+  ADD COLUMN "endDate" TIMESTAMP(3);
+
+ALTER TABLE "Tournament"
+  ADD CONSTRAINT "Tournament_cityId_fkey" FOREIGN KEY ("cityId") REFERENCES "City"("id") ON DELETE SET NULL ON UPDATE CASCADE;

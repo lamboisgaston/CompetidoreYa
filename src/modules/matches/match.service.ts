@@ -13,3 +13,9 @@ export async function reportResult(userId: string, role: Role, matchId: string, 
   await registerAudit({ userId, action: AuditAction.REPORT_MATCH_RESULT, targetId: updated.id });
   return updated;
 }
+
+
+export async function listAssignedMatches(userId: string, role: Role) {
+  if (role !== Role.ARBITRO) throw new HttpError(403, "Solo ARBITRO");
+  return prisma.match.findMany({ where: { refereeId: userId }, include: { tournament: true } });
+}

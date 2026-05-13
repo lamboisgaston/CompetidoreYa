@@ -7,7 +7,7 @@ export const registerSchema = z.object({
   role: z.nativeEnum(Role)
 });
 
-export const registerCompetitorSchema = z.object({
+export const publicRoleRegistrationSchema = z.object({
   email: z.string().email(),
   password: z.string().min(10),
   firstName: z.string().min(1),
@@ -15,6 +15,10 @@ export const registerCompetitorSchema = z.object({
   countryId: z.string().cuid(),
   cityId: z.string().cuid()
 });
+
+export const registerCompetitorSchema = publicRoleRegistrationSchema;
+export const registerOrganizerSchema = publicRoleRegistrationSchema;
+export const registerRefereeSchema = publicRoleRegistrationSchema;
 
 export const loginSchema = z.object({
   email: z.string().email(),
