@@ -1,11 +1,11 @@
-import { Role } from "@prisma/client";
 import { z } from "zod";
+import { PUBLIC_REGISTRATION_ROLES } from "./public-registration.js";
 
 export const registerSchema = z.object({
   email: z.string().email(),
   password: z.string().min(10),
-  role: z.nativeEnum(Role)
-});
+  role: z.enum(PUBLIC_REGISTRATION_ROLES)
+}).strict();
 
 export const publicRoleRegistrationSchema = z.object({
   email: z.string().email(),
