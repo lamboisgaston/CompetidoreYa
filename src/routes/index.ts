@@ -10,14 +10,15 @@ import { getSports, postSport } from "../modules/sports/sport.controller.js";
 import { getTournamentCategories, postTournamentCategory } from "../modules/tournament-categories/tournament-category.controller.js";
 import { getTournaments, postTournament } from "../modules/tournaments/tournament.controller.js";
 import { requireAuth } from "../core/middleware/authentication.js";
+import { asyncRoute } from "../core/middleware/async-route.js";
 
 export const router = Router();
 
-router.post("/auth/register", register);
-router.post("/auth/register/competitor", registerCompetitor);
-router.post("/auth/register/organizer", registerOrganizer);
-router.post("/auth/register/referee", registerReferee);
-router.post("/auth/login", login);
+router.post("/auth/register", asyncRoute(register));
+router.post("/auth/register/competitor", asyncRoute(registerCompetitor));
+router.post("/auth/register/organizer", asyncRoute(registerOrganizer));
+router.post("/auth/register/referee", asyncRoute(registerReferee));
+router.post("/auth/login", asyncRoute(login));
 
 // Lectura pública para catálogos base
 router.get("/cities", getCities);

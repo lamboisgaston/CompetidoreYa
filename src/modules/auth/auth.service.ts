@@ -5,8 +5,11 @@ import { env } from "../../config/env.js";
 import { prisma } from "../../config/prisma.js";
 import { HttpError } from "../../core/errors/http-error.js";
 import { registerAudit } from "../audit/audit.service.js";
+import { requirePublicRegistrationRole, type PublicRegistrationRole } from "./public-registration.js";
 
-export async function registerUser(input: { email: string; password: string; role: any; firstName?: string; lastName?: string; countryId?: string; cityId?: string }) {
+export async function registerUser(input: { email: string; password: string; role: PublicRegistrationRole; firstName?: string; lastName?: string; countryId?: string; cityId?: string }) {
+  // También se valida aquí para impedir que otro controlador omita el esquema.
+  requirePublicRegistrationRole(input.role);
   const exists = await prisma.user.findUnique({ where: { email: input.email } });
   if (exists) throw new HttpError(409, "El email ya está en uso");
 
